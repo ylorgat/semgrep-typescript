@@ -1,0 +1,1172 @@
+rules:
+- id: typescript.react.security.audit.react-unsanitized-property.react-unsanitized-property
+  patterns:
+  - pattern-either:
+    - pattern: |
+        $X.innerHTML = ...;
+    - pattern: |
+        $X.outerHTML = ...;
+  - pattern-not: |
+      $X.innerHTML = "...";
+  - pattern-not: |
+      $X.outerHTML = "...";
+  message: |
+    User controlled data in a `$X` is an anti-pattern than can lead to XSS vulnerabilities
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-unsanitized-property.react-unsanitized-property
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-unsanitized-method.react-unsanitized-method
+  patterns:
+  - pattern-either:
+    - pattern: $EL.insertAdjacentHTML($P, ...)
+    - pattern: document.write(...)
+    - pattern: document.writeln(...)
+  - pattern-not: $EL.insertAdjacentHTML($P, "...")
+  - pattern-not: document.write("...")
+  - pattern-not: document.writeln("...")
+  message: |
+    User controlled data in a insertAdjacentHTML, document.write or document.writeln is an anti-pattern than can lead to XSS vulnerabilities
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-unsanitized-method.react-unsanitized-method
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.security.audit.react-styled-components-injection.react-styled-components-injection
+  patterns:
+  - pattern-inside: |
+      import styled from 'styled-components';
+      ...
+  - pattern-either:
+    - pattern-inside: |
+        import $STYLE from "...";
+        ...
+    - pattern-inside: |
+        $STYLE = $METHOD(...);
+        ...
+    - pattern-inside: |
+        function $FUNC(...,{$STYLE},...) {
+          ...
+        }
+    - pattern-inside: |
+        function $FUNC(...,$STYLE,...) {
+          ...
+        }
+    - pattern-inside: |
+        function $FUNC(...,{$INPUT},...) {
+          ...
+          $STYLE = <... $INPUT ...>;
+          ...
+        }
+    - pattern-inside: |
+        function $FUNC(...,$INPUT,...) {
+          ...
+          $STYLE = <... $INPUT ...>;
+          ...
+        }
+  - pattern: |
+      styled.$EL`...${$STYLE}...`
+  message: |
+    User controlled data in a styled component's css is an anti-pattern than can lead to XSS vulnerabilities
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://styled-components.com/docs/advanced#security
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-styled-components-injection.react-styled-components-injection
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.security.audit.react-router-redirect.react-router-redirect
+  patterns:
+  - pattern-inside: |
+      import "react-router-dom";
+      ...
+  - pattern: |
+      <Redirect to={...} />
+  - pattern-not: |
+      <Redirect to={"..."} />
+  - pattern-not: |
+      <Redirect to={{pathname: "..."}} />
+  message: |
+    User controlled data in <Redirect /> can lead to unpredicted redirects.
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+  metadata:
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-router-redirect.react-router-redirect
+- id: typescript.react.security.audit.react-props-injection.react-props-injection
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        import $PROPS from "...";
+        ...
+    - pattern-inside: |
+        $PROPS = $METHOD(...);
+        ...
+    - pattern-inside: |
+        function $FUNC(...,$PROPS,...) {
+          ...
+        }
+  - pattern-either:
+    - pattern: |
+        <$EL {...<... $PROPS ...>} />
+    - pattern: |
+        <$EL {...$F(<... $PROPS ...>)} />
+    - pattern: |
+        React.createElement($EL, <... $PROPS ...>)
+    - pattern: |
+        React.createElement($EL, $F(<... $PROPS ...>))
+  message: |
+    Inject arbitrary props into the new element. It may introduce an XSS vulnerability.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://medium.com/dailyjs/exploiting-script-injection-flaws-in-reactjs-883fb1fe36c1
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-props-injection.react-props-injection
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-no-refs.react-no-refs
+  pattern-either:
+  - pattern: <$EL ref=... />
+  - pattern: $REACT.createRef(...)
+  - pattern: $REACT.useRef(...)
+  - pattern: createRef(...)
+  - pattern: useRef(...)
+  message: |
+    `ref` usage found, refs give direct DOM access and may create a possibility for XSS
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-no-refs.react-no-refs
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.security.audit.react-missing-noreferrer.react-missing-noreferrer
+  pattern-either:
+  - patterns:
+    - pattern: |
+        <$X target="_blank" />
+    - pattern-not: |
+        <$X target="_blank" rel="..." />
+    - pattern-not: |
+        <$X href="=~/^\/[^\/]/i" />
+    - pattern-not: |
+        <$X to="=~/^\/[^\/]/i" />
+  - patterns:
+    - pattern-inside: |
+        <$X target="_blank" rel=... />
+    - pattern-not-inside: |
+        <$X href="=~/^\/[^\/]/i" rel=... />
+    - pattern-not-inside: |
+        <$X to="=~/^\/[^\/]/i" rel=... />
+    - pattern-regex: rel=["']((?!noreferrer).)*?["']
+  - patterns:
+    - pattern: |
+        React.createElement($A, {target: '_blank'},...)
+    - pattern-not: |
+        React.createElement($A, {rel: '...'},...)
+    - pattern-not: |
+        React.createElement($A, {href: '=~/^\/[^\/]/i'},...)
+  - patterns:
+    - pattern: |
+        React.createElement($A, {target: '_blank', rel: $REL},...)
+    - pattern-not: |
+        React.createElement($A, {href: '=~/^\/[^\/]/i'},...)
+    - metavariable-regex:
+        metavariable: $REL
+        regex: "[\"']((?!noreferrer).)*?['\"]"
+  - patterns:
+    - pattern: |
+        $P = {target: '_blank'};
+        ...
+        React.createElement($A, $P,...);
+    - pattern-not: |
+        $P = {rel: '...'};
+        ...
+        React.createElement($A, $P,...);
+    - pattern-not: |
+        $P = {href: '=~/^\/[^\/]/i'};
+        ...
+        React.createElement($A, $P,...);
+  - patterns:
+    - pattern: |
+        $P = {target: '_blank', rel: $REL};
+        ...
+        React.createElement($A, $P,...);
+    - pattern-not: |
+        $P = {href: '=~/^\/[^\/]/i'};
+        ...
+        React.createElement($A, $P,...);
+    - metavariable-regex:
+        metavariable: $REL
+        regex: "[\"']((?!noreferrer).)*?['\"]"
+  message: |
+    Missing 'noreferrer' on an anchor tag where target='_blank'.
+  metadata:
+    cwe: 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor'
+    owasp: 'A3: Sensitive Data Exposure'
+    references:
+    - https://html.spec.whatwg.org/multipage/links.html#link-type-noreferrer
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-missing-noreferrer.react-missing-noreferrer
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-missing-noopener.react-missing-noopener
+  pattern-either:
+  - patterns:
+    - pattern: |
+        <$X target="_blank" />
+    - pattern-not: |
+        <$X target="_blank" rel="..." />
+  - patterns:
+    - pattern-inside: |
+        <$X target="_blank" rel=... />
+    - pattern-regex: rel=["']((?!noopener).)*?["']
+  - patterns:
+    - pattern: |
+        React.createElement($A, {target: '_blank'},...)
+    - pattern-not: |
+        React.createElement($A, {rel: '...'},...)
+  - patterns:
+    - pattern: |
+        React.createElement($A, {target: '_blank', rel: $REL},...)
+    - metavariable-regex:
+        metavariable: $REL
+        regex: "[\"']((?!noopener).)*?['\"]"
+  - patterns:
+    - pattern: |
+        $P = {target: '_blank'};
+        ...
+        React.createElement($A, $P,...);
+    - pattern-not: |
+        $P = {rel: '...'};
+        ...
+        React.createElement($A, $P,...);
+  - patterns:
+    - pattern: |
+        $P = {target: '_blank', rel: $REL};
+        ...
+        React.createElement($A, $P,...);
+    - metavariable-regex:
+        metavariable: $REL
+        regex: "[\"']((?!noopener).)*?['\"]"
+  message: |
+    Missing 'noopener' on an anchor tag where target='_blank'. This could introduce
+    a reverse tabnabbing vulnerability. Include 'noopener' when using target='_blank'.
+  metadata:
+    cwe: 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor'
+    owasp: 'A3: Sensitive Data Exposure'
+    references:
+    - https://html.spec.whatwg.org/multipage/links.html#link-type-noreferrer
+    - https://web.dev/external-anchors-use-rel-noopener/
+    - https://owasp.org/www-community/attacks/Reverse_Tabnabbing
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-missing-noopener.react-missing-noopener
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-jwt-in-localstorage.react-jwt-in-localstorage
+  patterns:
+  - pattern-inside: |
+      import jwt_decode from "jwt-decode";
+      ...
+  - pattern-either:
+    - pattern: |
+        $DECODED = jwt_decode($TOKEN,...);
+        ...
+        localStorage.setItem($NAME, <... $TOKEN ...>);
+    - pattern: |
+        $DECODED = jwt_decode(...);
+        ...
+        localStorage.setItem($NAME, <... $DECODED ...>);
+  message: |
+    Storing JWT tokens in localStorage known to be a bad practice, consider moving your tokens from localStorage to a HTTP cookie.
+  metadata:
+    references:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-jwt-in-localstorage.react-jwt-in-localstorage
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-jwt-decoded-property.react-jwt-decoded-property
+  patterns:
+  - pattern-inside: |
+      import jwt_decode from "jwt-decode";
+      ...
+  - pattern-inside: |
+      $DECODED = jwt_decode($TOKEN,...);
+      ...
+  - pattern: $DECODED.$PROPERTY
+  message: |
+    Property decoded from JWT token without verifying and cannot be trustworthy.
+  languages:
+  - typescript
+  severity: WARNING
+  metadata:
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-jwt-decoded-property.react-jwt-decoded-property
+- id: typescript.react.security.audit.react-css-injection.react-css-injection
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        import $STYLE from "...";
+        ...
+    - pattern-inside: |
+        $STYLE = $METHOD(...);
+        ...
+    - pattern-inside: |
+        function $FUNC(...,{$STYLE},...) {
+          ...
+        }
+    - pattern-inside: |
+        function $FUNC(...,$STYLE,...) {
+          ...
+        }
+  - pattern-inside: |
+      <$EL style=... />
+  - pattern-not-inside: |
+      <$EL style={{$X:...}} />
+  - pattern: $STYLE
+  message: |
+    User controlled data in a `style` attribute is an anti-pattern than can lead to XSS vulnerabilities
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-css-injection.react-css-injection
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+  pattern-either:
+  - pattern: |
+      <$X dangerouslySetInnerHTML=... />
+  - pattern: |
+      {dangerouslySetInnerHTML: ...}
+  message: |
+    Setting HTML from code is risky because it’s easy to inadvertently expose your users to a cross-site scripting (XSS) attack.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://reactjs.org/docs/dom-elements.html#dangerouslysetinnerhtml
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.security.audit.react-href-var.react-href-var
+  pattern-either:
+  - patterns:
+    - pattern: |
+        <$EL href=... />
+    - pattern-not: |
+        <$EL href="..." />
+  - patterns:
+    - pattern: |
+        <Link to=... />
+    - pattern-not: |
+        <Link to="..." />
+  - patterns:
+    - pattern: |
+        React.createElement($EL, {href: ...})
+    - pattern-not: |
+        React.createElement($EL, {href: "..."})
+  - patterns:
+    - pattern: |
+        $PARAMS = {href: ...};
+    - pattern-not: |
+        $PARAMS = {href: "..."};
+    - pattern-inside: |
+        ...
+        React.createElement($EL, $PARAMS);
+  message: |
+    Detected a variable used in an anchor tag with
+    the 'href' attribute. This allows a malicious actor to
+    input the 'javascript:' URI and is subject to cross-
+    site scripting (XSS) attacks.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://reactjs.org/blog/2019/08/08/react-v16.9.0.html#deprecating-javascript-urls
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-href-var.react-href-var
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.audit.react-html-element-spreading.react-html-element-spreading
+  patterns:
+  - pattern: |
+      <$EL {...$PROPS} />
+  - metavariable-regex:
+      metavariable: $EL
+      regex: '[a-z]([a-zA-Z])*'
+  message: |
+    It is a good practice to avoid spreading for JSX attributes. This prevents accidentally
+    passing `dangerouslySetInnerHTML` to an element.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-html-element-spreading.react-html-element-spreading
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.security.audit.react-http-leak.react-http-leak
+  pattern-either:
+  - patterns:
+    - pattern: |
+        <$EL codebase=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: applet|object
+    - pattern-not: |
+        <$EL codebase="..." />
+  - patterns:
+    - pattern: |
+        <$EL cite=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: blockquote|del|ins|q
+    - pattern-not: |
+        <$EL cite="..." />
+  - patterns:
+    - pattern: |
+        <$EL longdesc=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: frame|iframe|img
+    - pattern-not: |
+        <$EL longdesc="..." />
+  - patterns:
+    - pattern: |
+        <$EL src=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: frame|iframe|img|input|script|audio|source|track|embed|video
+    - pattern-not: |
+        <$EL src="..." />
+  - patterns:
+    - pattern: |
+        <$EL usemap=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: img|input|object
+    - pattern-not: |
+        <$EL usemap="..." />
+  - patterns:
+    - pattern: |
+        <$EL formaction=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: button|input
+    - pattern-not: |
+        <$EL formaction="..." />
+  - patterns:
+    - pattern: |
+        <$EL srcset=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: img|source
+    - pattern-not: |
+        <$EL srcset="..." />
+  - patterns:
+    - pattern: |
+        <$EL archive=... />
+    - metavariable-regex:
+        metavariable: $EL
+        regex: object|applet
+    - pattern-not: |
+        <$EL archive="..." />
+  - patterns:
+    - pattern: |
+        <body background=... />
+    - pattern-not: |
+        <body background="..." />
+  - patterns:
+    - pattern: |
+        <form action=... />
+    - pattern-not: |
+        <form action="..." />
+  - patterns:
+    - pattern: |
+        <head profile=... />
+    - pattern-not: |
+        <head profile="..." />
+  - patterns:
+    - pattern: |
+        <object $ATTR=... />
+    - metavariable-regex:
+        metavariable: $ATTR
+        regex: classid|data
+    - pattern-not: |
+        <object $ATTR="..." />
+  - patterns:
+    - pattern: |
+        <video poster=... />
+    - pattern-not: |
+        <video poster="..." />
+  - patterns:
+    - pattern: |
+        <command icon=... />
+    - pattern-not: |
+        <command icon="..." />
+  - patterns:
+    - pattern: |
+        <html manifest=... />
+    - pattern-not: |
+        <html manifest="..." />
+  - patterns:
+    - pattern: |
+        <meta content=... />
+    - pattern-not: |
+        <meta content="..." />
+  message: |
+    User-controlled input may trigger an unintended request to an external resource
+  metadata:
+    cwe: 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.audit.react-http-leak.react-http-leak
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.best-practice.react-props-in-state.react-props-in-state
+  pattern-either:
+  - patterns:
+    - pattern-inside: |
+        class $CN extends React.Component {
+          ...
+        }
+    - pattern: |
+        state = {$NAME: <... this.props.$PROP ...>}
+  - patterns:
+    - pattern-inside: |
+        function $FN({$PROP},...) {
+          ...
+        }
+    - pattern-inside: useState(...)
+    - pattern: $PROP
+  - patterns:
+    - pattern-inside: |
+        function $FN($PROP,...) {
+          ...
+        }
+    - pattern-inside: useState(...)
+    - pattern: $PROP
+  message: |
+    It is a bad practice to stop the data flow in rendering by copying props into state.
+  metadata:
+    references:
+    - https://overreacted.io/writing-resilient-components/#principle-1-dont-stop-the-data-flow
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.best-practice.react-props-in-state.react-props-in-state
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.best-practice.react-props-spreading.react-props-spreading
+  pattern: |
+    <$X {...$PROPS} />
+  message: |
+    It is a good practice to avoid spreading for JSX attributes.
+    It helps maintainability by avoiding passing unintentional extra props and allowing react to emit warnings when invalid HTML props are passed to HTML elements.
+  languages:
+  - typescript
+  severity: WARNING
+  metadata:
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.best-practice.react-props-spreading.react-props-spreading
+- id: typescript.react.security.react-controlled-component-password.react-controlled-component-password
+  pattern-either:
+  - pattern: <$EL type="password" value={this.state.$X} onChange=...  />
+  - pattern: |
+      React.createElement($EL,{type: 'password', value: this.state.$X, onChange:...},...)
+  - pattern: |
+      $PARAMS = {type: 'password', value: this.state.$X, onChange:...};
+      ...
+      React.createElement($EL,$PARAMS,...);
+  message: |
+    Password can be leaked if CSS injection exists on the page.
+  metadata:
+    references:
+    - https://no-csp-css-keylogger.badsite.io/
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.react-controlled-component-password.react-controlled-component-password
+  languages:
+  - typescript
+  severity: WARNING
+- id: typescript.react.security.react-insecure-request.react-insecure-request
+  patterns:
+  - pattern-either:
+    - patterns:
+      - pattern-either:
+        - pattern-inside: |
+            import $AXIOS from 'axios';
+            ...
+        - pattern-inside: |
+            $AXIOS = require('axios');
+            ...
+      - pattern-either:
+        - pattern: $AXIOS.$METHOD($URL,...)
+        - pattern: |
+            $VAR = $URL;
+            ...
+            $AXIOS.$METHOD($VAR,...);
+        - pattern: |
+            $AXIOS({url: $URL},...)
+        - pattern: |
+            $VAR = {url: $URL};
+            ...
+            $AXIOS($VAR,...);
+    - pattern: fetch($URL,...)
+    - pattern: |
+        $VAR = $URL;
+        ...
+        fetch($VAR,...);
+  - metavariable-regex:
+      metavariable: $URL
+      regex: "[\"'](http://).*['\"]"
+  message: |
+    Unencrypted request over HTTP detected.
+  metadata:
+    vulnerability: Insecure Transport
+    owasp: 'A3: Sensitive Data Exposure'
+    cwe: 'CWE-319: Cleartext Transmission of Sensitive Information'
+    references:
+    - https://www.npmjs.com/package/axios
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.react-insecure-request.react-insecure-request
+  languages:
+  - typescript
+  severity: ERROR
+- id: typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        $X = require('react-markdown/with-html');
+        ...
+    - pattern-inside: |
+        $X = require('react-markdown');
+        ...
+    - pattern-inside: |
+        import 'react-markdown/with-html';
+        ...
+    - pattern-inside: |
+        import 'react-markdown';
+        ...
+  - pattern-either:
+    - pattern: |
+        <$EL allowDangerousHtml />
+    - pattern: |
+        <$EL transformLinkUri=... />
+    - pattern: |
+        <$EL transformImageUri=... />
+  message: |
+    Overwriting `transformLinkUri` or `transformImageUri` to something insecure or turning `allowDangerousHtml` on, will open code up to XSS vectors.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://www.npmjs.com/package/react-markdown#security
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html
+  languages:
+  - typescript
+  severity: WARNING
+- id: ruby.rails.security.audit.xss.templates.unquoted-attribute.unquoted-attribute
+  message: |
+    Detected a unquoted template variable as an attribute. If unquoted, a
+    malicious actor could inject custom JavaScript handlers. To fix this,
+    add quotes around the template expression, like this: "<%= expr %>".
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://brakemanpro.com/2017/09/08/cross-site-scripting-in-rails#unquoted-attributes
+    - https://flask.palletsprojects.com/en/1.1.x/security/#cross-site-scripting-xss
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/ruby.rails.security.audit.xss.templates.unquoted-attribute.unquoted-attribute
+  languages:
+  - none
+  paths:
+    include:
+    - '*.erb'
+  severity: WARNING
+  pattern-regex: <[^<>]*=[^'"<>]*<%=.*?%>(\s+|>).*
+  fix-regex:
+    regex: <%=(.*?)%>
+    replacement: '"<%=\1%>"'
+- id: typescript.angular.security.audit.angular-domsanitizer.angular-bypasssecuritytrust
+  patterns:
+  - pattern-either:
+    - pattern: $X.bypassSecurityTrustHtml(...)
+    - pattern: $X.bypassSecurityTrustStyle(...)
+    - pattern: $X.bypassSecurityTrustScript(...)
+    - pattern: $X.bypassSecurityTrustUrl(...)
+    - pattern: $X.bypassSecurityTrustResourceUrl(...)
+  message: >-
+    Bypassing the built-in sanitization could expose the application to cross-site
+    scripting (XSS).
+  languages:
+  - typescript
+  severity: WARNING
+  metadata:
+    references:
+    - https://angular.io/api/platform-browser/DomSanitizer
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.angular.security.audit.angular-domsanitizer.angular-bypasssecuritytrust
+- id: typescript.angular.security.audit.angular-domsanitizer.angular-sanitize-none-context
+  patterns:
+  - pattern: $X.sanitize(SecurityContext.NONE, ...)
+  message: >-
+    The output is not sanitized when calling with SecurityContext.NONE.
+  languages:
+  - typescript
+  severity: WARNING
+  metadata:
+    references:
+    - https://angular.io/api/platform-browser/DomSanitizer
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.angular.security.audit.angular-domsanitizer.angular-sanitize-none-context
+- id: typescript.react.best-practice.react-find-dom.react-find-dom
+  pattern-either:
+  - pattern: |
+      findDOMNode(...)
+  - pattern: |
+      $DOM.findDOMNode(...)
+  message: |
+    findDOMNode is an escape hatch used to access the underlying DOM node. In most cases, use of this escape hatch is discouraged because it pierces the component abstraction.
+  metadata:
+    references:
+    - https://reactjs.org/docs/react-dom.html#finddomnode
+    - https://github.com/yannickcr/eslint-plugin-react/issues/678#issue-165177220
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.best-practice.react-find-dom.react-find-dom
+  languages:
+  - typescript
+  - javascript
+  severity: WARNING
+- id: typescript.react.best-practice.react-legacy-component.react-legacy-component
+  patterns:
+  - pattern: |
+      $METHOD(...) {
+        ...
+      }
+  - metavariable-regex:
+      metavariable: $METHOD
+      regex: componentWillMount|componentWillReceiveProps|componentWillUpdate
+  message: |
+    Legacy component lifecycle was detected - $METHOD.
+  languages:
+  - typescript
+  severity: WARNING
+  metadata:
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/typescript.react.best-practice.react-legacy-component.react-legacy-component
+- id: contrib.nodejsscan.header_cookie.cookie_session_no_httponly
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        $SESSION = require('cookie-session');
+        ...
+    - pattern-inside: |
+        $SESSION = require('express-session');
+        ...
+  - pattern: $SESSION(...)
+  - pattern-not-inside: $SESSION(<... {cookie:{httpOnly:true}} ...>,...)
+  - pattern-not-inside: |
+      $OPTS = <... {cookie:{httpOnly:true}} ...>;
+      ...
+      $SESSION($OPTS,...);
+  - pattern-not-inside: |
+      $OPTS = ...;
+      ...
+      $COOKIE = <... {httpOnly:true} ...>;
+      ...
+      $SESSION($OPTS,...);
+  - pattern-not-inside: |
+      $OPTS = ...;
+      ...
+      $OPTS.cookie = <... {httpOnly:true} ...>;
+      ...
+      $SESSION($OPTS,...);
+  - pattern-not-inside: |
+      $OPTS = ...;
+      ...
+      $COOKIE.httpOnly = true;
+      ...
+      $SESSION($OPTS,...);
+  - pattern-not-inside: |
+      $OPTS = ...;
+      ...
+      $OPTS.cookie.httpOnly = true;
+      ...
+      $SESSION($OPTS,...);
+  message: >-
+    Default session middleware settings: `httpOnly` not set. It ensures the
+    sensitive cookies cannot be accessed by client side JavaScript and helps
+    to protect against cross-site scripting attacks.
+  severity: WARNING
+  languages:
+  - javascript
+  metadata:
+    cwe: 'CWE-522: Insufficiently Protected Credentials'
+    owasp: 'A2: Broken Authentication'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/contrib.nodejsscan.header_cookie.cookie_session_no_httponly
+- id: contrib.nodejsscan.nosql_injection.node_nosqli_js_injection
+  patterns:
+  - pattern-either:
+    - pattern: |
+        $OBJ.$FUNC({$where: <... $REQ.$FOO.$BAR ...>}, ...);
+    - pattern: |
+        $OBJ.$FUNC({$where: <... $REQ.$QUERY ...>}, ...);
+    - pattern: |
+        $NSQL = <... $REQ.$QUERY.$...>;
+        ...
+        $OBJ.$FUNC({$where: <... $NSQL ...>}, ...);
+    - pattern: |
+        $NSQL = <... $REQ.$QUERY ...>;
+        ...
+        $OBJ.$FUNC({$where: <... $NSQL ...>}, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY = {$where: <... $INP ...>};
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY = {$where: <... $INP ...>};
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $QRY["$where"] = <... $REQ.$FOO ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $QRY["$where"] = <... $REQ.$FOO.$BAR ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+  message: >-
+    Untrusted user input in MongoDB $where operator can result in NoSQL
+    JavaScript Injection.
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    owasp: 'A1: Injection'
+    cwe: 'CWE-943: Improper Neutralization of Special Elements in Data Query Logic'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/contrib.nodejsscan.nosql_injection.node_nosqli_js_injection
+- id: go.lang.security.audit.xss.no-interpolation-js-template-string.no-interpolation-js-template-string
+  message: >-
+    Detected template variable interpolation in a JavaScript
+    template string. This is potentially vulnerable to
+    cross-site scripting (XSS) attacks because a malicious
+    actor has control over JavaScript but without the need
+    to use escaped characters. Instead, obtain this variable
+    outside of the template string and ensure your template
+    is properly escaped.
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://github.com/golang/go/issues/9200#issuecomment-66100328
+    - https://blogtitle.github.io/robn-go-security-pearls-cross-site-scripting-xss/
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/go.lang.security.audit.xss.no-interpolation-js-template-string.no-interpolation-js-template-string
+  languages:
+  - generic
+  severity: WARNING
+  patterns:
+  - pattern-inside: <script ...> ... ... ... ... ... </script>
+  - pattern: '` ... {{ ... }} ...`'
+- id: javascript.lang.best-practice.assigned-undefined.assigned-undefined
+  languages:
+  - javascript
+  - typescript
+  message: '`undefined` is not a reserved keyword in Javascript, so this is "valid"
+    Javascript but highly confusing and likely to result in bugs.'
+  pattern-either:
+  - pattern: undefined = $X;
+  - pattern: var undefined = $X;
+  - pattern: let undefined = $X;
+  - pattern: const undefined = $X;
+  - pattern: undefined = $X
+  severity: WARNING
+  metadata:
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/javascript.lang.best-practice.assigned-undefined.assigned-undefined
+- id: python.flask.security.xss.audit.template-unquoted-attribute-var.template-unquoted-attribute-var
+  message: >-
+    Detected a unquoted template variable as an attribute. If unquoted, a
+    malicious actor could inject custom JavaScript handlers. To fix this,
+    add quotes around the template expression, like this: "{{ expr }}".
+  metadata:
+    cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site\
+      \ Scripting')"
+    owasp: 'A7: Cross-site Scripting (XSS)'
+    references:
+    - https://flask.palletsprojects.com/en/1.1.x/security/#cross-site-scripting-xss
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/python.flask.security.xss.audit.template-unquoted-attribute-var.template-unquoted-attribute-var
+  languages:
+  - generic
+  paths:
+    include:
+    - '*.html'
+  severity: WARNING
+  patterns:
+  - pattern-inside: <$TAG ...>
+  - pattern-not-inside: ="..."
+  - pattern-not-inside: ='...'
+  - pattern: '{{ ... }}'
+  fix-regex:
+    regex: '{{(.*?)}}'
+    replacement: '"{{\1}}"'
+- id: ajinabraham.njsscan.nosql_injection.node_nosqli_js_injection
+  patterns:
+  - pattern-either:
+    - pattern: |
+        $OBJ.$FUNC({$where: <... $REQ.$FOO.$BAR ...>}, ...);
+    - pattern: |
+        $OBJ.$FUNC({$where: <... $REQ.$QUERY ...>}, ...);
+    - pattern: |
+        $NSQL = <... $REQ.$QUERY.$...>;
+        ...
+        $OBJ.$FUNC({$where: <... $NSQL ...>}, ...);
+    - pattern: |
+        $NSQL = <... $REQ.$QUERY ...>;
+        ...
+        $OBJ.$FUNC({$where: <... $NSQL ...>}, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY = {$where: <... $INP ...>};
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY = {$where: <... $INP ...>};
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $QRY["$where"] = <... $REQ.$FOO ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $QRY["$where"] = <... $REQ.$FOO.$BAR ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+    - pattern: |
+        $INP = $REQ.$FOO.$BAR;
+        ...
+        $QRY["$where"] = <... $INP ...>;
+        ...
+        $OBJ.$FUNC(<... $QRY ...>, ...);
+  message: >-
+    Untrusted user input in MongoDB $where operator can result in NoSQL
+    JavaScript Injection.
+  languages:
+  - javascript
+  severity: ERROR
+  metadata:
+    owasp: 'A1: Injection'
+    cwe: 'CWE-943: Improper Neutralization of Special Elements in Data Query Logic'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/ajinabraham.njsscan.nosql_injection.node_nosqli_js_injection
+- id: ajinabraham.njsscan.header_cookie.cookie_session_no_httponly
+  patterns:
+  - pattern-either:
+    - pattern-inside: |
+        $SESSION = require('cookie-session');
+        ...
+    - pattern-inside: |
+        $SESSION = require('express-session');
+        ...
+  - pattern-either:
+    - pattern-inside: $SESSION(<... {cookie:{httpOnly:false}} ...>,...)
+    - pattern-inside: |
+        $OPTS = <... {cookie:{httpOnly:false}} ...>;
+        ...
+        $SESSION($OPTS,...);
+    - pattern-inside: |
+        $OPTS = ...;
+        ...
+        $COOKIE = <... {httpOnly:false} ...>;
+        ...
+        $SESSION($OPTS,...);
+    - pattern-inside: |
+        $OPTS = ...;
+        ...
+        $OPTS.cookie = <... {httpOnly:false} ...>;
+        ...
+        $SESSION($OPTS,...);
+    - pattern-inside: |
+        $OPTS = ...;
+        ...
+        $COOKIE.httpOnly = false;
+        ...
+        $SESSION($OPTS,...);
+    - pattern-inside: |
+        $OPTS = ...;
+        ...
+        $OPTS.cookie.httpOnly = false;
+        ...
+        $SESSION($OPTS,...);
+  message: >-
+    Session middleware settings: `httpOnly` is explicitly set to false.  It ensures
+    that sensitive cookies cannot be accessed by client side  JavaScript and helps
+    to protect against cross-site scripting attacks.
+  severity: WARNING
+  languages:
+  - javascript
+  metadata:
+    cwe: "CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag"
+    owasp: 'A2: Broken Authentication'
+    dev.semgrep.actions:
+    - block
+    - notify
+    semgrep.url: https://semgrep.dev/r/ajinabraham.njsscan.header_cookie.cookie_session_no_httponly
